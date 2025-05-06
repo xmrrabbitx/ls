@@ -4,7 +4,7 @@ fd dq 0
 buffer rb 1024
 
 ;;include necessary file
-include "../helper/helper.asm"
+include "./helper/helper.asm"
 
 segment readable executable
 entry main
