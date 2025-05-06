@@ -6,9 +6,32 @@ buffer rb 1024
 ;;include necessary file
 include "./helper/helper.asm"
 
+macro paramsCheck 
+        
+	pop rcx ; rcx = 2, rsp += 8        
+	pop rsi ; rdi = argv[0], rsp += 8 (discard program name)
+	pop rsi ; rdi = argv[1], rsp += 8 (now points to NULL)
+	
+	cmp rsi, 0 ;; check on NULL value
+	je pass 	
+
+	;;cmp rsi, "-"
+	;;jne pass2
+
+	mov rdi, pathDir
+        mov rcx, 256
+        rep movsb ;; Copy until null terminator or RCX=0
+	jmp pass2	
+
+end macro
+
 segment readable executable
 entry main
 main:
+
+	paramsCheck ;; check if params existed!
+pass:
+	
 	call get_currentDir
 
 	mov rax, 2
@@ -17,7 +40,17 @@ main:
 	mov rdx, 0
 	syscall
 	mov [fd], rax
+	jmp pass3
+pass2:
+	mov rax, 2
+	mov rdi, pathDir
+	mov rsi, 0
+	mov rdx, 0
+	syscall
+	mov [fd], rax
+	jmp pass3
 
+pass3:
 	mov rax, 217
 	mov rdi, [fd]
 	mov rsi, buffer
@@ -107,8 +140,8 @@ exit:
 	syscall
 
 segment readable writeable
-;;pathDir db "listdir",0	
 del db 0xa, 0
 ;;mssg db "exited!",0
 dotMsg db "dots detected!",0
 ascii_digit db 0, 0xA
+pathDir db 256 dup(?)
