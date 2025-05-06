@@ -13,7 +13,7 @@ macro paramsCheck
 	pop rsi ; rdi = argv[1], rsp += 8 (now points to NULL)
 	
 	cmp rsi, 0 ;; check on NULL value
-	je pass 	
+	je currPass 	
 
 	;;cmp rsi, "-"
 	;;jne pass2
@@ -21,7 +21,7 @@ macro paramsCheck
 	mov rdi, pathDir
         mov rcx, 256
         rep movsb ;; Copy until null terminator or RCX=0
-	jmp pass2	
+	jmp dirPass	
 
 end macro
 
@@ -30,7 +30,7 @@ entry main
 main:
 
 	paramsCheck ;; check if params existed!
-pass:
+currPass:
 	
 	call get_currentDir
 
@@ -41,7 +41,8 @@ pass:
 	syscall
 	mov [fd], rax
 	jmp pass3
-pass2:
+
+dirPass:
 	mov rax, 2
 	mov rdi, pathDir
 	mov rsi, 0
