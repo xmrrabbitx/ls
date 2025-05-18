@@ -30,6 +30,8 @@ entry main
 main:
 
 	paramsCheck ;; check if params existed!
+
+;; list current dir _ no options
 currPass:
 	
 	call get_currentDir
@@ -40,18 +42,30 @@ currPass:
 	mov rdx, 0
 	syscall
 	mov [fd], rax
-	jmp pass3
+	jmp pass
 
+;; list specific dir 
 dirPass:
+
 	mov rax, 2
 	mov rdi, pathDir
 	mov rsi, 0
 	mov rdx, 0
 	syscall
 	mov [fd], rax
-	jmp pass3
+	jmp pass
 
-pass3:
+;; create getdent buffer
+pass:
+
+	;; make color blue using ANSCI encoding
+	mov rax, 1
+	mov rdi, 1
+	mov rsi, color_blue
+	mov rdx, 5
+	syscall
+
+	;; getdent syscall 
 	mov rax, 217
 	mov rdi, [fd]
 	mov rsi, buffer
@@ -62,7 +76,6 @@ pass3:
 	add rbx, 18
  
  	xor rcx, rcx
-	 
 
 find_null:
  
@@ -82,6 +95,7 @@ check_doubleDots:
 	jmp print_entry 
 
 init_entry:
+
 
 	push rcx
 	mov [ascii_digit], cl   
@@ -110,23 +124,28 @@ init_entry:
 	je check_doubleDots
 
 print_entry:
+	
+
+	;; print directory entries	
 	mov rax, 1
 	mov rdi, 1
 	mov rsi, rbx
 	mov rdx, rcx
 	syscall
 
+
 	mov rax,1
 	mov rdi,1
-	mov rsi,del
-	mov rdx,1
+	mov rsi,space
+	mov rdx,4
 	syscall
-
+	
 next_entry:
 
 	movzx rax, word [rbx - 2]
 	add rbx, rax
-	
+
+	;; check if entries end	
 	cmp byte [rbx], 0
 	je exit
 
@@ -135,14 +154,22 @@ next_entry:
 	jmp find_null
 	
 exit:	
-
+	;; new line at the end of entries	
+	mov rax,1
+	mov rdi,1
+	mov rsi,newLine
+	mov rdx,1
+	syscall
+	
 	mov rax,60
 	xor rdi, rdi
 	syscall
 
 segment readable writeable
-del db 0xa, 0
-;;mssg db "exited!",0
+space db '    ' ;;4 chars space
+newLine db 0xa, 0 ;; new line
 dotMsg db "dots detected!",0
-ascii_digit db 0, 0xA
+ascii_digit db 0,0xA
 pathDir db 256 dup(?)
+color_blue db 0x1B, '[34m', 0
+color_reset db 0x1B, '[0m', 0
