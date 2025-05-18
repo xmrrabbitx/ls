@@ -67,32 +67,23 @@ pass:
 	syscall
 
 	mov rbx, buffer 
-	mov rsi, rbx
-	mov rdx, rax ;; length
 
-loop_entr:
-
-	cmp rdx, 0
-	je exit
-
-	cmp byte [rsi+18],4
+loop_entry:
+	cmp byte [rbx+18],4
 	jne not_dir
-	
-	;; make color blue using ANSCI encoding
+
 	mov rax, 1
 	mov rdi, 1
 	mov rsi, color_blue
 	mov rdx, 5
 	syscall
 	
-
-not_dir:	
-	add rbx, 18
- 	xor rcx, rcx
+not_dir:
+ 	lea rbx, [rbx+18]
+	xor rcx, rcx
 
 find_null:
- 
-	cmp byte [rbx+rcx], 0                
+	cmp byte [rbx + rcx], 0                
 	je init_entry
 
 	inc rcx  
@@ -108,7 +99,7 @@ check_doubleDots:
 	jmp print_entry 
 
 init_entry:
-
+	
 	push rcx
 	mov [ascii_digit], cl   
 
@@ -150,12 +141,12 @@ print_entry:
 	mov rdx,4
 	syscall
 
-	
 next_entry:
 	
-	movzx rax, word [rbx - 2]
-	add rbx, rax
-
+	movzx rax, word [rbx - 2] ;; access to d_reclen value and store in rax
+	add rbx, rax ;; add d_reclen to rbx 
+	sub rbx, 18
+	
 	;; check if entries end	
 	cmp byte [rbx], 0
 	je exit
@@ -169,11 +160,7 @@ next_entry:
 	xor rcx,rcx	
 	
 	;;jmp find_null
-
-	movzx rcx, word [rsi + 16]
-	add rsi, rcx
-	sub rdx, rcx
-	jmp loop_entr
+	jmp loop_entry
 
 exit:	
 	;; new line at the end of entries	
@@ -190,8 +177,10 @@ exit:
 segment readable writeable
 space db '    ' ;;4 chars space
 newLine db 0xa, 0 ;; new line
-dotMsg db "dots detected!",0
 ascii_digit db 0,0xA
 pathDir db 256 dup(?)
-color_blue db 0x1B, '[34m', 0
+
+;; https://en.wikipedia.org/wiki/ANSI_escape_code
+color_blue db 0x1B, '[94m', 0 ;; bright blue ANSI escaped code 
+
 color_reset db 0x1B, '[0m', 0

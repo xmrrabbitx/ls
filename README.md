@@ -3,8 +3,8 @@
 #### download fasm compiler: https://flatassembler.net/download.php
 ##### ```git clone https://github.com/xmrrabbitx/ls.git```
 ##### ``` cd ./ls directory```
-##### compile: ```../fasm2/fasm2 ./ls/ls.asm```
-##### ```./ls/ls```
+##### compile: ```../fasm2/fasm2 ./ls.asm```
+##### run ```./ls``` on any directory.
 #### example:
 ##### list current directory: ``` ~$ ls```
-##### list specific directory: ``` ~$ ls listdir/```
+##### list specific directory: ``` ~$ ls example_dir/```
