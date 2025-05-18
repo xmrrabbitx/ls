@@ -57,14 +57,6 @@ dirPass:
 
 ;; create getdent buffer
 pass:
-
-	;; make color blue using ANSCI encoding
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, color_blue
-	mov rdx, 5
-	syscall
-
 	;; getdent syscall 
 	mov rax, 217
 	mov rdi, [fd]
@@ -72,9 +64,33 @@ pass:
 	mov rdx, $-buffer
 	syscall
 
-    	mov rbx, buffer      
+	mov rbx, buffer 
+	mov rsi, rbx
+	mov rdx, rax ;; length
+
+loop_entr:
+
+	cmp rdx, 0
+	je exit
+
+	cmp byte [rsi+18],4
+	jne con
+	
+	;; make color blue using ANSCI encoding
+	mov rax, 1
+	mov rdi, 1
+	mov rsi, color_blue
+	mov rdx, 5
+	syscall
+	
+	movzx rcx, word [rsi + 16]
+		
+	add rsi, rcx
+	sub rdx, rcx
+	jmp loop_entr
+	
+con:
 	add rbx, 18
- 
  	xor rcx, rcx
 
 find_null:
@@ -95,7 +111,6 @@ check_doubleDots:
 	jmp print_entry 
 
 init_entry:
-
 
 	push rcx
 	mov [ascii_digit], cl   
@@ -125,7 +140,6 @@ init_entry:
 
 print_entry:
 	
-
 	;; print directory entries	
 	mov rax, 1
 	mov rdi, 1
@@ -133,15 +147,15 @@ print_entry:
 	mov rdx, rcx
 	syscall
 
-
 	mov rax,1
 	mov rdi,1
 	mov rsi,space
 	mov rdx,4
 	syscall
+
 	
 next_entry:
-
+	
 	movzx rax, word [rbx - 2]
 	add rbx, rax
 
@@ -149,10 +163,16 @@ next_entry:
 	cmp byte [rbx], 0
 	je exit
 
+	mov rax, 1
+	mov rdi, 1
+	mov rsi, color_reset
+	mov rdx, 5
+	
+	syscall
 	xor rcx,rcx	
 	
-	jmp find_null
-	
+	;;jmp find_null
+	jmp loop_entr
 exit:	
 	;; new line at the end of entries	
 	mov rax,1
