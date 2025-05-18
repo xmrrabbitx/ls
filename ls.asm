@@ -1,5 +1,7 @@
 format ELF64 executable
 
+SYS_GETDENT = 217
+
 fd dq 0
 buffer rb 1024
 
@@ -58,7 +60,7 @@ dirPass:
 ;; create getdent buffer
 pass:
 	;; getdent syscall 
-	mov rax, 217
+	mov rax, SYS_GETDENT
 	mov rdi, [fd]
 	mov rsi, buffer
 	mov rdx, $-buffer
@@ -74,7 +76,7 @@ loop_entr:
 	je exit
 
 	cmp byte [rsi+18],4
-	jne con
+	jne not_dir
 	
 	;; make color blue using ANSCI encoding
 	mov rax, 1
@@ -83,13 +85,8 @@ loop_entr:
 	mov rdx, 5
 	syscall
 	
-	movzx rcx, word [rsi + 16]
-		
-	add rsi, rcx
-	sub rdx, rcx
-	jmp loop_entr
-	
-con:
+
+not_dir:	
 	add rbx, 18
  	xor rcx, rcx
 
@@ -172,7 +169,12 @@ next_entry:
 	xor rcx,rcx	
 	
 	;;jmp find_null
+
+	movzx rcx, word [rsi + 16]
+	add rsi, rcx
+	sub rdx, rcx
 	jmp loop_entr
+
 exit:	
 	;; new line at the end of entries	
 	mov rax,1
