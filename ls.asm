@@ -1,6 +1,7 @@
 format ELF64 executable
 
 SYS_GETDENT = 217
+SYS_OPEN = 2
 
 fd dq 0
 buffer rb 1024
@@ -25,7 +26,16 @@ macro paramsCheck
         rep movsb ;; Copy until null terminator or RCX=0
 	jmp dirPass	
 
-end macro
+end macro 
+
+macro openDir path
+	
+	mov rax, SYS_OPEN
+	mov rdi, path
+	mov rsi, 0
+	mov rdx, 0
+	syscall
+end macro 
 
 segment readable executable
 entry main
@@ -38,27 +48,20 @@ currPass:
 	
 	call get_currentDir
 
-	mov rax, 2
-	mov rdi, currentDir
-	mov rsi, 0
-	mov rdx, 0
-	syscall
+	openDir currentDir ;; open current path dir
 	mov [fd], rax
-	jmp pass
+	jmp getdent
 
 ;; list specific dir 
 dirPass:
 
-	mov rax, 2
-	mov rdi, pathDir
-	mov rsi, 0
-	mov rdx, 0
-	syscall
+	openDir pathDir ;; open path dir
+	
 	mov [fd], rax
-	jmp pass
+	jmp getdent
 
 ;; create getdent buffer
-pass:
+getdent:
 	;; getdent syscall 
 	mov rax, SYS_GETDENT
 	mov rdi, [fd]
@@ -68,17 +71,39 @@ pass:
 
 	mov rbx, buffer 
 
-loop_entry:
-	cmp byte [rbx+18],4
-	jne not_dir
+file_type:
+		
+	;; check if file is a regular file
+	;cmp byte [rbx+18],8
+	;je set_green
 
+	;; check if file is directory
+	cmp byte [rbx+18],4
+	je set_blue
+	
+	jmp d_name	
+
+set_blue:
+	
 	mov rax, 1
 	mov rdi, 1
 	mov rsi, color_blue
 	mov rdx, 5
 	syscall
 	
-not_dir:
+	jmp d_name
+
+set_green:
+	
+	mov rax, 1
+	mov rdi, 1
+	mov rsi, color_green
+	mov rdx, 5
+	syscall
+
+	jmp d_name	
+
+d_name:
  	lea rbx, [rbx+18]
 	xor rcx, rcx
 
@@ -159,8 +184,7 @@ next_entry:
 	syscall
 	xor rcx,rcx	
 	
-	;;jmp find_null
-	jmp loop_entry
+	jmp file_type
 
 exit:	
 	;; new line at the end of entries	
@@ -182,5 +206,5 @@ pathDir db 256 dup(?)
 
 ;; https://en.wikipedia.org/wiki/ANSI_escape_code
 color_blue db 0x1B, '[94m', 0 ;; bright blue ANSI escaped code 
-
+color_green db 0x1B, '[32m',0 ;; green ANSI
 color_reset db 0x1B, '[0m', 0
