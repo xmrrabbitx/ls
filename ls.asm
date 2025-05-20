@@ -77,7 +77,7 @@ file_type:
 	;cmp byte [rbx+18],8
 	;je set_green
 
-	;; check if file is directory
+	;; check if file is directory (first byte is type)
 	cmp byte [rbx+18],4
 	je set_blue
 	
@@ -104,7 +104,7 @@ set_green:
 	jmp d_name	
 
 d_name:
- 	lea rbx, [rbx+18]
+ 	lea rbx, [rbx+18] ;; point to begining offset of d_name
 	xor rcx, rcx
 
 find_null:
@@ -153,6 +153,11 @@ init_entry:
 
 print_entry:
 	
+	push rbx ;; reserve initial address value
+	add rbx, 1 ;; forward 1 byte to pass type and reach to d_name
+	;; example: \n.local or \4.git _ \n and \4 is 1 byte type and rest of
+	;; it is d_name bytes	
+
 	;; print directory entries	
 	mov rax, 1
 	mov rdi, 1
@@ -160,11 +165,15 @@ print_entry:
 	mov rdx, rcx
 	syscall
 
-	mov rax,1
-	mov rdi,1
-	mov rsi,space
-	mov rdx,4
+	pop rbx ;; get back to initial address value
+
+	;; add space to each entries
+	mov rax, 1
+	mov rdi, 1
+	mov rsi, space
+	mov rdx, 4
 	syscall
+
 
 next_entry:
 	
